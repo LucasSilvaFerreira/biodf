@@ -1,11 +1,14 @@
 import pandas as pd
 import  matplotlib.pyplot as plt
 import seaborn as sns
-
+import pybedtools
+import json
+import subprocess
+import os
 from pandas.api.types import is_string_dtype
 from pandas.api.types import is_numeric_dtype
 
-
+#!pip install pybedtools
 class BioDF(pd.DataFrame):    # adding new functions to the Dataframe class
     _metadata = ['lucas']
     lucas = 1  # This will be passed to copies
@@ -54,6 +57,17 @@ class BioDF(pd.DataFrame):    # adding new functions to the Dataframe class
 
       col_chr_check = set( df[columns_df[0]].apply(lambda x :  x.lower().startswith(chr_prefix.lower())   )  )
       chr_detected = False
+      try: 
+        df[columns_df[1]].apply(int)
+      except:
+          assert False == True, f"The column 1 (start)  can't be converted in a number"
+          return False
+      try: 
+        df[columns_df[2]].apply(int)
+      except:
+          assert False == True, f"The column 2 (end)  can't be converted in a number"
+          return False
+
       if len(col_chr_check) == 1 and col_chr_check == set([True]):
         chr_detected= True
       else:
@@ -83,7 +97,6 @@ class BioDF(pd.DataFrame):    # adding new functions to the Dataframe class
       Return: BioDataframe 
       '''
 
-
       df_columns_names = [c for c in self.columns if c not in [chr_col_name,start_col_name,end_col_name] ]
 
       c_extract = [chr_col_name, start_col_name, end_col_name] + df_columns_names 
@@ -91,17 +104,49 @@ class BioDF(pd.DataFrame):    # adding new functions to the Dataframe class
       if  self[c_extract].bio_is_bed( chr_prefix=check_prefix):
         return self[ [chr_col_name, start_col_name, end_col_name] + df_columns_names ]
       else:
-        assert False, 'This reposition is not valid, returning a empity BioDf'
+        assert False, 'This reposition is not valid, returning a empty BioDf'
         return BioDF()
+
+
+    def download_genome(self, genome='hg19', force=False):
+      print ('Need to add new genomes and accept path files')
+      if genome == 'hg19':
+        link=' wget http://hgdownload.cse.ucsc.edu/goldenpath/hg19/bigZips/hg19.fa.gz; gzip -d hg19.fa.gz'
+        out_file= 'hg19.fa'
+      #add more genomes here
+
+
+      if force == True or not os.path.exists(out_file):
+          pass
+      else:
+          return (out_file)
+
+      print ('Downloading',genome,link)
+      os.system(link)
+      return out_file
+
+
+
+    
+    def bio_get_fasta(self, genome='hg19', force_download=False ):
+      file_fasta = self.download_genome(genome=genome, force = force_download)
+      print (file_fasta)
+      assert self.bio_is_bed() == True, 'Cant get a fasta in a not bed formated df'
+      extract_seq = pybedtools.BedTool.from_dataframe(self)
+      a = extract_seq.sequence(fi=file_fasta, bedOut=True)
+      df = self
+      df['SEQUENCE'] = open(a.seqfn).read().split('\n')[:-1]
+      return df
 
 # df = BioDF() # creating a simple dataframe # all the dataframe functions and attributes are still the same. but now it has new functions
 
 # df_bed = BioDF([['chr1', 'chr1'],
 #                 ['hi','hi2'],
-#                 [1,1],
-#                 [2, 3],
+#                 [100000 ,100020 ],
+#                  [100010 ,100030 ],
 #                 ]).T
 
 
 # df_bed[[0,1,2]]
-#df_bed.bio_reposition_to_bed(0,2,3)
+#df_bed = df_bed.bio_reposition_to_bed(0,2,3)
+#df_bed.bio_get_fasta()
