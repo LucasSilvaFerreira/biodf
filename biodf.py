@@ -27,6 +27,19 @@ class BioDF(pd.DataFrame):    # adding new functions to the Dataframe class
       plt.plot(self[column_name], color=color)
       plt.show()
 
+    def filter_columns(self, substring='', inplace=False):
+      '''return the columns names filtered for a substring
+      substring: str:
+        this will return all columns names mathing the following substrings
+      intplace: bool | False
+        returns the df with the filtered columns
+      '''
+
+      columns_detected = [x for  x  in self.columns if substring in x]
+      if inplace:
+        return self[columns_detected]
+      else:
+        return columns_detected
 
     def bio_is_bed(self ,chr_prefix='chr' ):
       ''' 
@@ -82,61 +95,61 @@ class BioDF(pd.DataFrame):    # adding new functions to the Dataframe class
         return False
 
     
-    def bio_reposition_to_bed(self, chr_col_name, start_col_name, end_col_name, check_prefix='chr'):
+    # def bio_reposition_to_bed(self, chr_col_name, start_col_name, end_col_name, check_prefix='chr'):
 
-      ''' 
-      Return a dataframe in a valid Bed3 format given the name of the chr, start and end columns.
-      All the remaning elements will be shifted after the end column.
-      Parameters:
-        chr_col_name : str
-          Chromossome column
-        start_col_name : str
-          Start coordinate column
-        end_col_name : str
-          End coordinate column
-      Return: BioDataframe 
-      '''
+    #   ''' 
+    #   Return a dataframe in a valid Bed3 format given the name of the chr, start and end columns.
+    #   All the remaning elements will be shifted after the end column.
+    #   Parameters:
+    #     chr_col_name : str
+    #       Chromossome column
+    #     start_col_name : str
+    #       Start coordinate column
+    #     end_col_name : str
+    #       End coordinate column
+    #   Return: BioDataframe 
+    #   '''
 
-      df_columns_names = [c for c in self.columns if c not in [chr_col_name,start_col_name,end_col_name] ]
+    #   df_columns_names = [c for c in self.columns if c not in [chr_col_name,start_col_name,end_col_name] ]
 
-      c_extract = [chr_col_name, start_col_name, end_col_name] + df_columns_names 
+    #   c_extract = [chr_col_name, start_col_name, end_col_name] + df_columns_names 
       
-      if  self[c_extract].bio_is_bed( chr_prefix=check_prefix):
-        return self[ [chr_col_name, start_col_name, end_col_name] + df_columns_names ]
-      else:
-        assert False, 'This reposition is not valid, returning a empty BioDf'
-        return BioDF()
+    #   if  self[c_extract].bio_is_bed( chr_prefix=check_prefix):
+    #     return self[ [chr_col_name, start_col_name, end_col_name] + df_columns_names ]
+    #   else:
+    #     assert False, 'This reposition is not valid, returning a empty BioDf'
+    #     return BioDF()
 
 
-    def download_genome(self, genome='hg19', force=False):
-      print ('Need to add new genomes and accept path files')
-      if genome == 'hg19':
-        link=' wget http://hgdownload.cse.ucsc.edu/goldenpath/hg19/bigZips/hg19.fa.gz; gzip -d hg19.fa.gz'
-        out_file= 'hg19.fa'
-      #add more genomes here
+    # def download_genome(self, genome='hg19', force=False):
+    #   print ('Need to add new genomes and accept path files')
+    #   if genome == 'hg19':
+    #     link=' wget http://hgdownload.cse.ucsc.edu/goldenpath/hg19/bigZips/hg19.fa.gz; gzip -d hg19.fa.gz'
+    #     out_file= 'hg19.fa'
+    #   #add more genomes here
 
 
-      if force == True or not os.path.exists(out_file):
-          pass
-      else:
-          return (out_file)
+    #   if force == True or not os.path.exists(out_file):
+    #       pass
+    #   else:
+    #       return (out_file)
 
-      print ('Downloading',genome,link)
-      os.system(link)
-      return out_file
+    #   print ('Downloading',genome,link)
+    #   os.system(link)
+    #   return out_file
 
 
 
     
-    def bio_get_fasta(self, genome='hg19', force_download=False ):
-      file_fasta = self.download_genome(genome=genome, force = force_download)
-      print (file_fasta)
-      assert self.bio_is_bed() == True, 'Cant get a fasta in a not bed formated df'
-      extract_seq = pybedtools.BedTool.from_dataframe(self)
-      a = extract_seq.sequence(fi=file_fasta, bedOut=True)
-      df = self
-      df['SEQUENCE'] = open(a.seqfn).read().split('\n')[:-1]
-      return df
+    # def bio_get_fasta(self, genome='hg19', force_download=False ):
+    #   file_fasta = self.download_genome(genome=genome, force = force_download)
+    #   print (file_fasta)
+    #   assert self.bio_is_bed() == True, 'Cant get a fasta in a not bed formated df'
+    #   extract_seq = pybedtools.BedTool.from_dataframe(self)
+    #   a = extract_seq.sequence(fi=file_fasta, bedOut=True)
+    #   df = self
+    #   df['SEQUENCE'] = open(a.seqfn).read().split('\n')[:-1]
+    #   return df
 
 # df = BioDF() # creating a simple dataframe # all the dataframe functions and attributes are still the same. but now it has new functions
 
